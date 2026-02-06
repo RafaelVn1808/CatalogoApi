@@ -1,0 +1,6 @@
+@CatalagoApi_HostAddress = http://localhost:5291
+
+GET {{CatalagoApi_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
