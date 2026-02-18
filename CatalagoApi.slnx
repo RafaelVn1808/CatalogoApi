@@ -1,3 +1,4 @@
 <Solution>
-  <Project Path="CatalagoApi/CatalagoApi.csproj" />
+  <Project Path="backend/CatalagoApi/CatalagoApi.csproj" />
+  <Project Path="backend/CatalagoApi.Tests/CatalagoApi.Tests.csproj" />
 </Solution>

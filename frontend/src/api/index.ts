@@ -1,0 +1,6 @@
+export { api, setAuthHelpers } from './client'
+export { authApi } from './auth'
+export { produtosApi } from './produtos'
+export { categoriasApi } from './categorias'
+export { lojasApi } from './lojas'
+export { estoqueApi } from './estoque'

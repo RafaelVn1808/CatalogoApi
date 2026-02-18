@@ -53,6 +53,7 @@ Guarde as credenciais sem commitá-las no repositório:
 
 ```powershell
 cd CatalagoApi
+# ou, se a API estiver em backend/:  cd backend/CatalagoApi
 dotnet user-secrets set "Supabase:Url" "https://SEU_PROJETO.supabase.co"
 dotnet user-secrets set "Supabase:ServiceKey" "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
 ```
