@@ -17,6 +17,7 @@ export default function ProdutoForm() {
   const [codigo, setCodigo] = useState('')
   const [imagemUrl, setImagemUrl] = useState('')
   const [selectedImageFile, setSelectedImageFile] = useState<File | null>(null)
+  const [removeImage, setRemoveImage] = useState(false)
   const [uploadingImage, setUploadingImage] = useState(false)
   const [ativo, setAtivo] = useState(true)
   const [categoriaId, setCategoriaId] = useState<number | ''>('')
@@ -25,8 +26,11 @@ export default function ProdutoForm() {
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
   const previewImageUrl = useMemo(
-    () => (selectedImageFile ? URL.createObjectURL(selectedImageFile) : imagemUrl),
-    [selectedImageFile, imagemUrl]
+    () => {
+      if (removeImage) return ''
+      return selectedImageFile ? URL.createObjectURL(selectedImageFile) : imagemUrl
+    },
+    [selectedImageFile, imagemUrl, removeImage]
   )
 
   useEffect(() => {
@@ -58,6 +62,7 @@ export default function ProdutoForm() {
   }, [id])
 
   async function uploadImagemSelecionada(): Promise<string | null> {
+    if (removeImage) return null
     if (!selectedImageFile) return imagemUrl || null
     setUploadingImage(true)
     try {
@@ -93,7 +98,7 @@ export default function ProdutoForm() {
       if (isEdit) {
         const body: ProdutoUpdateDto = {
           ...payload,
-          imagemUrl: imagemFinal || undefined,
+          imagemUrl: removeImage ? null : (imagemFinal || undefined),
           ativo,
         }
         await produtosApi.atualizar(Number(id), body)
@@ -162,18 +167,49 @@ export default function ProdutoForm() {
             <input
               type="file"
               accept="image/*"
-              onChange={(e) => setSelectedImageFile(e.target.files?.[0] ?? null)}
+              onChange={(e) => {
+                setSelectedImageFile(e.target.files?.[0] ?? null)
+                setRemoveImage(false)
+              }}
             />
             <p style={{ marginTop: '0.35rem', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
               Selecione uma imagem para enviar. O upload acontece ao salvar.
             </p>
             {previewImageUrl && (
-              <div style={{ marginTop: '0.75rem' }}>
+              <div style={{ marginTop: '0.75rem', position: 'relative', display: 'inline-block' }}>
                 <img
                   src={previewImageUrl}
                   alt="Pré-visualização"
                   style={{ width: '100%', maxWidth: '260px', borderRadius: '8px', border: '1px solid var(--border)' }}
                 />
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedImageFile(null)
+                    setRemoveImage(true)
+                    setImagemUrl('')
+                  }}
+                  style={{
+                    position: 'absolute',
+                    top: 6,
+                    right: 6,
+                    width: 28,
+                    height: 28,
+                    borderRadius: '50%',
+                    border: 'none',
+                    background: 'rgba(0,0,0,0.6)',
+                    color: '#fff',
+                    fontSize: '1rem',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    lineHeight: 1,
+                  }}
+                  title="Remover imagem"
+                >
+                  &times;
+                </button>
               </div>
             )}
           </div>

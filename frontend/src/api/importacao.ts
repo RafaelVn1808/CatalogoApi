@@ -17,6 +17,7 @@ export const importacaoApi = {
 
     return api.post<ImportacaoCsvResultDto>('/api/v1/importacao', formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
+      timeout: 300_000,
     })
   },
 }

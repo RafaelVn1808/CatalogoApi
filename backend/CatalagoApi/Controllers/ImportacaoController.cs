@@ -35,6 +35,11 @@ public class ImportacaoController : ControllerBase
         if (file == null || file.Length == 0)
             return BadRequest(new { message = "Envie um arquivo (form-data: file). Formatos: .csv, .txt, .xlsx ou .xls" });
 
+        // Copia o arquivo para memória antes de processar para não depender da conexão do cliente
+        await using var memStream = new MemoryStream();
+        await file.CopyToAsync(memStream, ct);
+        memStream.Position = 0;
+
         var ext = Path.GetExtension(file.FileName).ToLowerInvariant();
         ImportacaoCsvResult result;
         var options = new ImportacaoCsvOptions(
@@ -43,37 +48,38 @@ public class ImportacaoController : ControllerBase
             ApenasCodigoCategoria: apenasCodigoCategoria
         );
 
-        await using var stream = file.OpenReadStream();
+        // Usa CancellationToken.None para que o processamento não seja cancelado se o cliente fechar a conexão
+        Stream stream = memStream;
 
         if (ext == ".xlsx")
         {
-            result = await _importacaoService.ImportarXlsxAsync(stream, options, ct);
+            result = await _importacaoService.ImportarXlsxAsync(stream, options, CancellationToken.None);
         }
         else if (ext == ".xls")
         {
-            await using var ms = await CopyToMemoryStreamAsync(stream, ct);
-            var isCsvByContent = await IsCsvContentAsync(ms, ct);
+            await using var ms = await CopyToMemoryStreamAsync(stream, CancellationToken.None);
+            var isCsvByContent = await IsCsvContentAsync(ms, CancellationToken.None);
             ms.Position = 0;
             if (isCsvByContent)
             {
-                result = await _importacaoService.ImportarCsvAsync(ms, options, ct);
+                result = await _importacaoService.ImportarCsvAsync(ms, options, CancellationToken.None);
             }
             else
             {
                 try
                 {
-                    result = await _importacaoService.ImportarXlsAsync(ms, options, ct);
+                    result = await _importacaoService.ImportarXlsAsync(ms, options, CancellationToken.None);
                 }
                 catch (NotOLE2FileException)
                 {
                     ms.Position = 0;
-                    result = await _importacaoService.ImportarCsvAsync(ms, options, ct);
+                    result = await _importacaoService.ImportarCsvAsync(ms, options, CancellationToken.None);
                 }
             }
         }
         else if (ext == ".csv" || ext == ".txt")
         {
-            result = await _importacaoService.ImportarCsvAsync(stream, options, ct);
+            result = await _importacaoService.ImportarCsvAsync(stream, options, CancellationToken.None);
         }
         else
         {
