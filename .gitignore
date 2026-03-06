@@ -363,7 +363,8 @@ MigrationBackup/
 FodyWeavers.xsd
 
 # ========== CatalagoApi / ASP.NET Core ==========
-# Arquivos locais com credenciais (use User Secrets em desenvolvimento)
+# Arquivos locais com credenciais (use appsettings.Development.json em desenvolvimento)
+appsettings.Development.json
 appsettings.*.local.json
 *.local.json
 
@@ -392,3 +393,4 @@ Thumbs.db
 uploads/
 temp/
 tmp/
+/docs
