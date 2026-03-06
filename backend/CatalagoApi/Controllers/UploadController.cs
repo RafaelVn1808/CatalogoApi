@@ -6,7 +6,7 @@ namespace CatalagoApi.Controllers;
 
 [ApiController]
 [Route("api/v1/[controller]")]
-[Authorize]
+[Authorize(Roles = "Admin")]
 public class UploadController : ControllerBase
 {
     private readonly UploadService _uploadService;
@@ -14,6 +14,7 @@ public class UploadController : ControllerBase
     public UploadController(UploadService uploadService) => _uploadService = uploadService;
 
     [HttpPost("produto")]
+    [RequestSizeLimit(5_242_880)] // 5 MB
     [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> UploadProduto(IFormFile file, CancellationToken ct)

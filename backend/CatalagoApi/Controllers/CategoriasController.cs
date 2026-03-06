@@ -35,7 +35,7 @@ public class CategoriasController : ControllerBase
     }
 
     [HttpPost]
-    [Authorize]
+    [Authorize(Roles = "Admin")]
     [ProducesResponseType(typeof(CategoriaDto), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<CategoriaDto>> Criar([FromBody] CategoriaCreateDto dto, CancellationToken ct)
@@ -47,7 +47,7 @@ public class CategoriasController : ControllerBase
     }
 
     [HttpPut("{id:int}")]
-    [Authorize]
+    [Authorize(Roles = "Admin")]
     [ProducesResponseType(typeof(CategoriaDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<CategoriaDto>> Atualizar(int id, [FromBody] CategoriaUpdateDto dto, CancellationToken ct)
@@ -61,7 +61,7 @@ public class CategoriasController : ControllerBase
     }
 
     [HttpDelete("{id:int}")]
-    [Authorize]
+    [Authorize(Roles = "Admin")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -73,5 +73,22 @@ public class CategoriasController : ControllerBase
         if (erro == "CategoriaComProdutos")
             return BadRequest(new { message = "Não é possível excluir categoria com produtos vinculados" });
         return NoContent();
+    }
+
+    /// <summary>
+    /// Remove categorias inválidas (nomes que parecem código/barras) e reatribui os produtos para "Geral".
+    /// </summary>
+    [HttpPost("limpar-invalidas")]
+    [Authorize(Roles = "Admin")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public async Task<ActionResult<object>> LimparCategoriasInvalidas(CancellationToken ct)
+    {
+        var (categoriasRemovidas, produtosReatribuidos, nomesRemovidos) = await _categoriaService.LimparCategoriasInvalidasAsync(ct);
+        return Ok(new
+        {
+            categoriasRemovidas,
+            produtosReatribuidos,
+            nomesRemovidos
+        });
     }
 }

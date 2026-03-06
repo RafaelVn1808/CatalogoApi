@@ -8,7 +8,6 @@ public class SupabaseStorageService
     private readonly HttpClient _http;
     private readonly SupabaseSettings _settings;
     private readonly ILogger<SupabaseStorageService> _logger;
-    private const string Bucket = "Imagens-produtos";
 
     public SupabaseStorageService(HttpClient http, Microsoft.Extensions.Options.IOptions<SupabaseSettings> settings, ILogger<SupabaseStorageService> logger)
     {
@@ -25,8 +24,9 @@ public class SupabaseStorageService
             return (null, "Extensão inválida");
 
         var uniqueName = $"{Guid.NewGuid()}{ext}";
+        var bucket = _settings.Bucket;
         var path = $"produtos/{uniqueName}";
-        var uploadUrl = $"{_settings.Url.TrimEnd('/')}/storage/v1/object/{Bucket}/{path}";
+        var uploadUrl = $"{_settings.Url.TrimEnd('/')}/storage/v1/object/{bucket}/{path}";
 
         using var content = new StreamContent(fileStream);
         content.Headers.ContentType = new MediaTypeHeaderValue(contentType);
@@ -43,7 +43,7 @@ public class SupabaseStorageService
             return (null, $"[{(int)response.StatusCode}] {errorBody}");
         }
 
-        var publicUrl = $"{_settings.Url.TrimEnd('/')}/storage/v1/object/public/{Bucket}/{path}";
+        var publicUrl = $"{_settings.Url.TrimEnd('/')}/storage/v1/object/public/{bucket}/{path}";
         return (publicUrl, null);
     }
 }
@@ -53,4 +53,5 @@ public class SupabaseSettings
     public const string SectionName = "Supabase";
     public string Url { get; set; } = string.Empty;
     public string ServiceKey { get; set; } = string.Empty;
+    public string Bucket { get; set; } = "Imagens-produtos";
 }

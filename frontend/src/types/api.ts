@@ -17,6 +17,7 @@ export interface TokenResponse {
   email: string
   role: string
   lojaId: number | null
+  deveAlterarSenha: boolean
 }
 
 export interface RefreshTokenRequest {
@@ -86,7 +87,7 @@ export interface DisponibilidadeLojaDto {
   lojaId: number
   lojaNome: string
   lojaWhatsApp: string | null
-  quantidade: number
+  disponivel: boolean
 }
 
 export interface ProdutoListDto {
@@ -96,6 +97,7 @@ export interface ProdutoListDto {
   preco: number
   imagemUrl: string | null
   codigo: string | null
+  ativo: boolean
   categoriaNome: string
   lojasDisponiveis: DisponibilidadeLojaDto[]
 }
@@ -113,7 +115,7 @@ export interface ProdutoDetalheDto {
 
 export interface EstoqueLojaDto {
   lojaId: number
-  quantidade: number
+  disponivel: boolean
 }
 
 export interface ProdutoCreateDto {
@@ -144,6 +146,15 @@ export interface PaginacaoResponse<T> {
   totalPaginas: number
 }
 
+export interface ProdutoListarResponse {
+  itens: ProdutoListDto[]
+  total: number
+  pagina: number
+  tamanho: number
+  totalPaginas: number
+  precoMedio: number | null
+}
+
 // ---- Estoque ----
 export interface EstoqueItemDto {
   produtoId: number
@@ -151,5 +162,22 @@ export interface EstoqueItemDto {
   produtoCodigo: string | null
   lojaId: number
   lojaNome: string
-  quantidade: number
+  disponivel: boolean
+  precoVenda: number
+}
+
+export interface ImportacaoCsvResultDto {
+  linhasProcessadas: number
+  produtosCriados: number
+  produtosAtualizados: number
+  produtosNaoEncontrados: number
+  /** Total de linhas de dados no arquivo (excluindo cabeçalho). */
+  totalLinhasNoArquivo?: number
+  /** Linhas ignoradas por nome do produto vazio. */
+  linhasIgnoradasNomeVazio?: number
+  /** Linhas ignoradas por preço de venda inválido. */
+  linhasIgnoradasPrecoInvalido?: number
+  erros: string[]
+  pendencias: string[]
+  sucesso: boolean
 }

@@ -25,6 +25,7 @@ interface User {
   email: string
   role: string
   lojaId: number | null
+  deveAlterarSenha: boolean
 }
 
 interface AuthContextValue {
@@ -32,6 +33,7 @@ interface AuthContextValue {
   loading: boolean
   login: (email: string, senha: string) => Promise<{ ok: boolean; message?: string }>
   logout: () => void
+  clearDeveAlterarSenha: () => void
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null)
@@ -91,6 +93,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           email: data.email,
           role: data.role,
           lojaId: data.lojaId ?? null,
+          deveAlterarSenha: data.deveAlterarSenha ?? false,
         }
         localStorage.setItem(STORAGE_KEYS.user, JSON.stringify(u))
         setUser(u)
@@ -109,9 +112,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     clearAuth()
   }, [clearAuth])
 
+  const clearDeveAlterarSenha = useCallback(() => {
+    setUser(prev => {
+      if (!prev) return prev
+      const updated = { ...prev, deveAlterarSenha: false }
+      localStorage.setItem(STORAGE_KEYS.user, JSON.stringify(updated))
+      return updated
+    })
+  }, [])
+
   const value = useMemo<AuthContextValue>(
-    () => ({ user, loading, login, logout }),
-    [user, loading, login, logout]
+    () => ({ user, loading, login, logout, clearDeveAlterarSenha }),
+    [user, loading, login, logout, clearDeveAlterarSenha]
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

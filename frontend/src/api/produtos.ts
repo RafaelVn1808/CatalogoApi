@@ -4,8 +4,7 @@
 
 import { api } from './client'
 import type {
-  PaginacaoResponse,
-  ProdutoListDto,
+  ProdutoListarResponse,
   ProdutoDetalheDto,
   ProdutoCreateDto,
   ProdutoUpdateDto,
@@ -13,8 +12,20 @@ import type {
 } from '@/types/api'
 
 export const produtosApi = {
-  listar: (params?: { busca?: string; categoriaId?: number; pagina?: number; tamanho?: number }) =>
-    api.get<PaginacaoResponse<ProdutoListDto>>('/api/v1/produtos', { params }),
+  listar: (params?: {
+    busca?: string
+    categoriaId?: number
+    precoMin?: number
+    precoMax?: number
+    ativo?: boolean
+    disponivel?: boolean
+    incluirInativos?: boolean
+    ordenarPor?: string
+    ordenarDirecao?: string
+    pagina?: number
+    tamanho?: number
+  }) =>
+    api.get<ProdutoListarResponse>('/api/v1/produtos', { params }),
 
   obter: (id: number) =>
     api.get<ProdutoDetalheDto>(`/api/v1/produtos/${id}`),
@@ -24,6 +35,9 @@ export const produtosApi = {
 
   atualizar: (id: number, body: ProdutoUpdateDto) =>
     api.put<ProdutoDetalheDto>(`/api/v1/produtos/${id}`, body),
+
+  atualizarAtivo: (id: number, ativo: boolean) =>
+    api.put(`/api/v1/produtos/${id}/ativo`, { ativo }),
 
   excluir: (id: number) =>
     api.delete(`/api/v1/produtos/${id}`),

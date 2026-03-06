@@ -9,6 +9,7 @@ public record ProdutoListDto(
     decimal Preco,
     string? ImagemUrl,
     string? Codigo,
+    bool Ativo,
     string CategoriaNome,
     IEnumerable<DisponibilidadeLojaDto> LojasDisponiveis
 );
@@ -58,11 +59,24 @@ public record ProdutoUpdateDto(
     int CategoriaId
 );
 
-public record DisponibilidadeLojaDto(int LojaId, string LojaNome, string? LojaWhatsApp, int Quantidade);
+public record ProdutoAtivoDto(bool Ativo);
+
+public record DisponibilidadeLojaDto(int LojaId, string LojaNome, string? LojaWhatsApp, bool Disponivel);
 
 public record EstoqueLojaDto(
     [Range(1, int.MaxValue, ErrorMessage = "LojaId inválido")]
     int LojaId,
-    [Range(0, int.MaxValue, ErrorMessage = "Quantidade não pode ser negativa")]
-    int Quantidade
+    bool Disponivel
+);
+
+/// <summary>
+/// Resposta da listagem de produtos com paginação e preço médio do resultado filtrado.
+/// </summary>
+public record ProdutoListarResponse(
+    IEnumerable<ProdutoListDto> Itens,
+    int Total,
+    int Pagina,
+    int Tamanho,
+    int TotalPaginas,
+    decimal? PrecoMedio
 );

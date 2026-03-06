@@ -17,7 +17,8 @@ public static class DbSeeder
             Email = "admin@catalago.com",
             SenhaHash = senhaHash,
             Nome = "Administrador",
-            Role = "Admin"
+            Role = "Admin",
+            DeveAlterarSenha = true
         });
         await db.SaveChangesAsync(ct);
     }

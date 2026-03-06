@@ -46,7 +46,8 @@ public class AuthService
             usuario.Nome,
             usuario.Email,
             usuario.Role,
-            usuario.LojaId
+            usuario.LojaId,
+            usuario.DeveAlterarSenha
         );
     }
 
@@ -75,7 +76,8 @@ public class AuthService
             usuario.Nome,
             usuario.Email,
             usuario.Role,
-            usuario.LojaId
+            usuario.LojaId,
+            usuario.DeveAlterarSenha
         );
     }
 
@@ -90,6 +92,7 @@ public class AuthService
             return false;
 
         usuario.SenhaHash = BCrypt.Net.BCrypt.HashPassword(request.NovaSenha);
+        usuario.DeveAlterarSenha = false;
         await _db.SaveChangesAsync(ct);
         return true;
     }

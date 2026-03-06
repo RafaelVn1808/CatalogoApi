@@ -8,5 +8,6 @@ public class ProdutoLoja
     public int LojaId { get; set; }
     public Loja Loja { get; set; } = null!;
 
-    public int Quantidade { get; set; }
+    /// <summary>Indica se o produto está disponível para venda nesta loja (admin controla sem usar quantidade).</summary>
+    public bool Disponivel { get; set; }
 }

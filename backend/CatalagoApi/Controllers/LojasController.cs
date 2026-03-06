@@ -35,7 +35,7 @@ public class LojasController : ControllerBase
     }
 
     [HttpPost]
-    [Authorize]
+    [Authorize(Roles = "Admin")]
     [ProducesResponseType(typeof(LojaDto), StatusCodes.Status201Created)]
     public async Task<ActionResult<LojaDto>> Criar([FromBody] LojaCreateDto dto, CancellationToken ct)
     {
@@ -46,7 +46,7 @@ public class LojasController : ControllerBase
     }
 
     [HttpPut("{id:int}")]
-    [Authorize]
+    [Authorize(Roles = "Admin")]
     [ProducesResponseType(typeof(LojaDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<LojaDto>> Atualizar(int id, [FromBody] LojaUpdateDto dto, CancellationToken ct)
@@ -60,7 +60,7 @@ public class LojasController : ControllerBase
     }
 
     [HttpDelete("{id:int}")]
-    [Authorize]
+    [Authorize(Roles = "Admin")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Excluir(int id, CancellationToken ct)

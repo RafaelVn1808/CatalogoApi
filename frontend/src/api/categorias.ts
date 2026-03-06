@@ -20,4 +20,10 @@ export const categoriasApi = {
 
   excluir: (id: number) =>
     api.delete(`/api/v1/categorias/${id}`),
+
+  /** Remove categorias com nomes que parecem código/barras e reatribui produtos para "Geral". */
+  limparInvalidas: () =>
+    api.post<{ categoriasRemovidas: number; produtosReatribuidos: number; nomesRemovidos: string[] }>(
+      '/api/v1/categorias/limpar-invalidas'
+    ),
 }

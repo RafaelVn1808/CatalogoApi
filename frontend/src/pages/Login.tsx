@@ -11,6 +11,7 @@ export default function Login() {
   const [submitting, setSubmitting] = useState(false)
 
   if (loading) return <div className="loading">Carregando...</div>
+  if (user && user.deveAlterarSenha) return <Navigate to="/alterar-senha" replace />
   if (user) return <Navigate to="/produtos" replace />
 
   async function handleSubmit(e: React.FormEvent) {
@@ -20,7 +21,13 @@ export default function Login() {
     const { ok, message } = await login(email, senha)
     setSubmitting(false)
     if (ok) {
-      navigate('/produtos', { replace: true })
+      const stored = localStorage.getItem('catalago_user')
+      const u = stored ? JSON.parse(stored) : null
+      if (u?.deveAlterarSenha) {
+        navigate('/alterar-senha', { replace: true })
+      } else {
+        navigate('/produtos', { replace: true })
+      }
     } else {
       setErro(message ?? 'Erro ao fazer login.')
     }

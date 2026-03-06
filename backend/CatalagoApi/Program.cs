@@ -110,6 +110,7 @@ builder.Services.AddSwaggerGen(c =>
         Description = "Faça login em POST /api/v1/auth/login e cole APENAS o token (sem Bearer)"
     });
     c.OperationFilter<CatalagoApi.Swagger.BearerAuthOperationFilter>();
+    c.OperationFilter<CatalagoApi.Swagger.FileUploadOperationFilter>();
 });
 
 var app = builder.Build();
@@ -120,58 +121,31 @@ app.Logger.LogInformation("Ambiente: {Env}", app.Environment.EnvironmentName);
 // Tratamento global de exceções
 app.UseMiddleware<CatalagoApi.Middleware.ExceptionHandlingMiddleware>();
 
-// Swagger ANTES do logging para que /swagger/* seja atendido pelo próprio Swagger
-app.UseSwagger();
-app.UseSwaggerUI(c =>
+// Swagger apenas em desenvolvimento (não expor em produção)
+if (app.Environment.IsDevelopment())
 {
-    c.SwaggerEndpoint("/swagger/v1/swagger.json", "CatalagoApi v1");
-    c.RoutePrefix = "swagger";
-    c.DisplayRequestDuration();
-});
+    app.UseSwagger();
+    app.UseSwaggerUI(c =>
+    {
+        c.SwaggerEndpoint("/swagger/v1/swagger.json", "CatalagoApi v1");
+        c.RoutePrefix = "swagger";
+        c.DisplayRequestDuration();
+    });
+}
 
 app.UseMiddleware<CatalagoApi.Middleware.RequestLoggingMiddleware>();
 
-// Migrations automáticas e seed em desenvolvimento
-if (app.Environment.IsDevelopment())
-{
-    using (var scope = app.Services.CreateScope())
-    {
-        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-        var pending = await db.Database.GetPendingMigrationsAsync();
-        if (pending.Any())
-            await db.Database.MigrateAsync();
-        await DbSeeder.SeedAsync(db);
-    }
-}
-
-// Garante schema de TokenRedefinicao e RefreshTokens (útil quando migração não foi aplicada)
+// Migrations automáticas + seed (em qualquer ambiente)
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    try
+    var pending = await db.Database.GetPendingMigrationsAsync();
+    if (pending.Any())
     {
-        await db.Database.ExecuteSqlRawAsync("""
-            ALTER TABLE "Usuarios" ADD COLUMN IF NOT EXISTS "TokenRedefinicao" text NULL;
-            ALTER TABLE "Usuarios" ADD COLUMN IF NOT EXISTS "TokenRedefinicaoExpira" timestamp with time zone NULL;
-            """);
+        app.Logger.LogInformation("Aplicando {Count} migration(s) pendentes...", pending.Count());
+        await db.Database.MigrateAsync();
     }
-    catch { /* colunas já existem */ }
-    try
-    {
-        await db.Database.ExecuteSqlRawAsync("""
-            CREATE TABLE IF NOT EXISTS "RefreshTokens" (
-                "Id" serial PRIMARY KEY,
-                "UsuarioId" integer NOT NULL REFERENCES "Usuarios"("Id") ON DELETE CASCADE,
-                "Token" text NOT NULL,
-                "ExpiresAt" timestamp with time zone NOT NULL,
-                "CreatedAt" timestamp with time zone NOT NULL
-            );
-            CREATE INDEX IF NOT EXISTS "IX_RefreshTokens_ExpiresAt" ON "RefreshTokens"("ExpiresAt");
-            CREATE INDEX IF NOT EXISTS "IX_RefreshTokens_Token" ON "RefreshTokens"("Token");
-            CREATE INDEX IF NOT EXISTS "IX_RefreshTokens_UsuarioId" ON "RefreshTokens"("UsuarioId");
-            """);
-    }
-    catch { /* tabela/índices já existem */ }
+    await DbSeeder.SeedAsync(db);
 }
 
 // Em desenvolvimento, evita redirecionar HTTP→HTTPS (evita "Failed to fetch" no Swagger)

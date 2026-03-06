@@ -187,7 +187,7 @@ Qualquer rota desconhecida redireciona para `/`.
 
 - Usado em `/produtos/novo` e `/produtos/:id/editar`.
 - **Criar:** campos nome, descrição, preço, código, categoria; opcionalmente estoques por loja (envio em `criar`). Envia `POST /api/v1/produtos` com `ProdutoCreateDto`.
-- **Editar:** carrega o produto com `GET /api/v1/produtos/:id`, preenche nome, descrição, preço, código, categoria, URL da imagem, ativo e quantidade por loja. Salva com `PUT /api/v1/produtos/:id` (`ProdutoUpdateDto`) e depois `PUT /api/v1/produtos/:id/estoque` com a lista de `{ lojaId, quantidade }`.
+- **Editar:** carrega o produto com `GET /api/v1/produtos/:id`, preenche nome, descrição, preço, código, categoria, URL da imagem, ativo e disponibilidade por loja. Salva com `PUT /api/v1/produtos/:id` (`ProdutoUpdateDto`) e depois `PUT /api/v1/produtos/:id/estoque` com a lista de `{ lojaId, disponivel }`.
 
 ### Categorias (`src/pages/Categorias.tsx`)
 
@@ -206,7 +206,7 @@ Qualquer rota desconhecida redireciona para `/`.
 
 - Filtros: select de loja (ou “Todas”) e checkbox “Apenas com estoque”.
 - Chama `GET /api/v1/estoque` (com `lojaId` e `apenasComEstoque`) ou `GET /api/v1/estoque/loja/:id` quando uma loja está selecionada.
-- Tabela: produto, código, loja, quantidade.
+- Tabela: produto, código, loja, disponível (sim/não).
 
 ---
 

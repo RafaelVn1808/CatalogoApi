@@ -6,5 +6,6 @@ public record EstoqueItemDto(
     string? ProdutoCodigo,
     int LojaId,
     string LojaNome,
-    int Quantidade
+    bool Disponivel,
+    decimal PrecoVenda
 );

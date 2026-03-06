@@ -27,7 +27,8 @@ public record TokenResponse(
     string Nome,
     string Email,
     string Role,
-    int? LojaId
+    int? LojaId,
+    bool DeveAlterarSenha
 );
 
 /// <summary>Alterar senha (usuário autenticado).</summary>

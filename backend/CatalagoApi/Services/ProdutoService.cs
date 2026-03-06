@@ -11,9 +11,16 @@ public class ProdutoService
 
     public ProdutoService(AppDbContext db) => _db = db;
 
-    public async Task<PaginacaoResponse<ProdutoListDto>> ListarAsync(
+    public async Task<ProdutoListarResponse> ListarAsync(
         string? busca,
         int? categoriaId,
+        decimal? precoMin,
+        decimal? precoMax,
+        bool? ativo,
+        bool? disponivel,
+        bool incluirInativos,
+        string? ordenarPor,
+        string? ordenarDirecao,
         int pagina,
         int tamanho,
         CancellationToken ct = default)
@@ -22,7 +29,14 @@ public class ProdutoService
             .Include(p => p.Categoria)
             .Include(p => p.ProdutosLoja)
                 .ThenInclude(pl => pl.Loja)
-            .Where(p => p.Ativo);
+            .AsQueryable();
+
+        if (!incluirInativos)
+            query = query.Where(p => p.Ativo);
+        if (ativo.HasValue)
+            query = query.Where(p => p.Ativo == ativo.Value);
+        if (disponivel.HasValue)
+            query = query.Where(p => p.ProdutosLoja.Any(pl => pl.Disponivel == disponivel.Value));
 
         if (!string.IsNullOrWhiteSpace(busca))
         {
@@ -36,10 +50,25 @@ public class ProdutoService
         if (categoriaId.HasValue)
             query = query.Where(p => p.CategoriaId == categoriaId.Value);
 
+        if (precoMin.HasValue)
+            query = query.Where(p => p.Preco >= precoMin.Value);
+        if (precoMax.HasValue)
+            query = query.Where(p => p.Preco <= precoMax.Value);
+
         var total = await query.CountAsync(ct);
 
+        var dirAsc = !string.Equals(ordenarDirecao?.Trim(), "desc", StringComparison.OrdinalIgnoreCase);
+        query = string.Equals(ordenarPor?.Trim(), "Preco", StringComparison.OrdinalIgnoreCase)
+            ? (dirAsc ? query.OrderBy(p => p.Preco) : query.OrderByDescending(p => p.Preco))
+            : (dirAsc ? query.OrderBy(p => p.Nome) : query.OrderByDescending(p => p.Nome));
+
+        decimal? precoMedio = null;
+        if (total > 0)
+        {
+            precoMedio = await query.Select(p => p.Preco).AverageAsync(ct);
+        }
+
         var produtos = await query
-            .OrderBy(p => p.Nome)
             .Skip((pagina - 1) * tamanho)
             .Take(tamanho)
             .Select(p => new ProdutoListDto(
@@ -49,15 +78,16 @@ public class ProdutoService
                 p.Preco,
                 p.ImagemUrl,
                 p.Codigo,
+                p.Ativo,
                 p.Categoria.Nome,
                 p.ProdutosLoja
-                    .Where(pl => pl.Quantidade > 0)
-                    .Select(pl => new DisponibilidadeLojaDto(pl.LojaId, pl.Loja.Nome, pl.Loja.WhatsApp, pl.Quantidade))
+                    .Where(pl => pl.Disponivel)
+                    .Select(pl => new DisponibilidadeLojaDto(pl.LojaId, pl.Loja.Nome, pl.Loja.WhatsApp, pl.Disponivel))
             ))
             .ToListAsync(ct);
 
         var totalPaginas = (int)Math.Ceiling(total / (double)tamanho);
-        return new PaginacaoResponse<ProdutoListDto>(produtos, total, pagina, tamanho, totalPaginas);
+        return new ProdutoListarResponse(produtos, total, pagina, tamanho, totalPaginas, precoMedio);
     }
 
     public async Task<ProdutoDetalheDto?> ObterAsync(int id, CancellationToken ct = default)
@@ -80,8 +110,8 @@ public class ProdutoService
             produto.Codigo,
             new CategoriaDto(produto.Categoria.Id, produto.Categoria.Nome, produto.Categoria.Descricao),
             produto.ProdutosLoja
-                .Where(pl => pl.Quantidade > 0)
-                .Select(pl => new DisponibilidadeLojaDto(pl.LojaId, pl.Loja.Nome, pl.Loja.WhatsApp, pl.Quantidade))
+                .Where(pl => pl.Disponivel)
+                .Select(pl => new DisponibilidadeLojaDto(pl.LojaId, pl.Loja.Nome, pl.Loja.WhatsApp, pl.Disponivel))
         );
     }
 
@@ -108,18 +138,17 @@ public class ProdutoService
         _db.Produtos.Add(produto);
         await _db.SaveChangesAsync(ct);
 
-        foreach (var est in dto.Estoques ?? [])
+        // Disponibilidade por loja (usa a primeira informada ou true)
+        var disponivelInicial = dto.Estoques?.FirstOrDefault()?.Disponivel ?? true;
+        var lojas = await _db.Lojas.ToListAsync(ct);
+        foreach (var loja in lojas)
         {
-            var loja = await _db.Lojas.FindAsync([est.LojaId], ct);
-            if (loja != null && est.Quantidade >= 0)
+            _db.ProdutosLoja.Add(new ProdutoLoja
             {
-                _db.ProdutosLoja.Add(new ProdutoLoja
-                {
-                    ProdutoId = produto.Id,
-                    LojaId = est.LojaId,
-                    Quantidade = est.Quantidade
-                });
-            }
+                ProdutoId = produto.Id,
+                LojaId = loja.Id,
+                Disponivel = disponivelInicial
+            });
         }
         await _db.SaveChangesAsync(ct);
 
@@ -160,7 +189,22 @@ public class ProdutoService
     }
 
     /// <summary>
-    /// Atualiza quantidades de estoque do produto por loja.
+    /// Atualiza apenas o status ativo/inativo do produto.
+    /// </summary>
+    public async Task<bool> AtualizarAtivoAsync(int id, bool ativo, CancellationToken ct = default)
+    {
+        var produto = await _db.Produtos.FindAsync([id], ct);
+        if (produto == null)
+            return false;
+
+        produto.Ativo = ativo;
+        await _db.SaveChangesAsync(ct);
+        return true;
+    }
+
+    /// <summary>
+    /// Atualiza disponibilidade global do produto e replica para todas as lojas.
+    /// Usa o primeiro item de <paramref name="estoques"/> (ou true se vazio).
     /// </summary>
     /// <returns>True se o produto existir e a operação for concluída.</returns>
     public async Task<bool> AtualizarEstoqueAsync(int produtoId, IEnumerable<EstoqueLojaDto> estoques, CancellationToken ct = default)
@@ -169,28 +213,17 @@ public class ProdutoService
         if (produto == null)
             return false;
 
-        foreach (var est in estoques)
-        {
-            var pl = await _db.ProdutosLoja
-                .FirstOrDefaultAsync(x => x.ProdutoId == produtoId && x.LojaId == est.LojaId, ct);
+        var todasLojas = await _db.Lojas.ToListAsync(ct);
+        var produtosLoja = await _db.ProdutosLoja.Where(pl => pl.ProdutoId == produtoId).ToListAsync(ct);
+        var disponivelGlobal = estoques?.FirstOrDefault()?.Disponivel ?? true;
 
+        foreach (var loja in todasLojas)
+        {
+            var pl = produtosLoja.FirstOrDefault(x => x.LojaId == loja.Id);
             if (pl != null)
-            {
-                pl.Quantidade = Math.Max(0, est.Quantidade);
-            }
-            else if (est.Quantidade > 0)
-            {
-                var loja = await _db.Lojas.FindAsync([est.LojaId], ct);
-                if (loja != null)
-                {
-                    _db.ProdutosLoja.Add(new ProdutoLoja
-                    {
-                        ProdutoId = produtoId,
-                        LojaId = est.LojaId,
-                        Quantidade = est.Quantidade
-                    });
-                }
-            }
+                pl.Disponivel = disponivelGlobal;
+            else
+                _db.ProdutosLoja.Add(new ProdutoLoja { ProdutoId = produtoId, LojaId = loja.Id, Disponivel = disponivelGlobal });
         }
         await _db.SaveChangesAsync(ct);
         return true;

@@ -17,7 +17,7 @@ public class EstoqueController : ControllerBase
     /// Lista o estoque. Opcionalmente filtra por loja.
     /// </summary>
     [HttpGet]
-    [Authorize]
+    [Authorize(Roles = "Admin")]
     [ProducesResponseType(typeof(IEnumerable<EstoqueItemDto>), StatusCodes.Status200OK)]
     public async Task<ActionResult<IEnumerable<EstoqueItemDto>>> Listar(
         [FromQuery] int? lojaId,
@@ -34,7 +34,7 @@ public class EstoqueController : ControllerBase
     /// Lista o estoque de uma loja específica (atalho para GET /api/estoque?lojaId=).
     /// </summary>
     [HttpGet("loja/{lojaId:int}")]
-    [Authorize]
+    [Authorize(Roles = "Admin")]
     [ProducesResponseType(typeof(IEnumerable<EstoqueItemDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<IEnumerable<EstoqueItemDto>>> PorLoja(

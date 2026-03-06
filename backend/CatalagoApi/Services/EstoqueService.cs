@@ -34,7 +34,7 @@ public class EstoqueService
         if (lojaId.HasValue)
             query = query.Where(pl => pl.LojaId == lojaId.Value);
         if (apenasComEstoque)
-            query = query.Where(pl => pl.Quantidade > 0);
+            query = query.Where(pl => pl.Disponivel);
 
         var itens = await query
             .OrderBy(pl => pl.Loja!.Nome)
@@ -45,7 +45,8 @@ public class EstoqueService
                 pl.Produto.Codigo,
                 pl.LojaId,
                 pl.Loja!.Nome,
-                pl.Quantidade
+                pl.Disponivel,
+                pl.Produto!.Preco
             ))
             .ToListAsync(ct);
 
@@ -71,7 +72,7 @@ public class EstoqueService
             .Where(pl => pl.LojaId == lojaId);
 
         if (apenasComEstoque)
-            query = query.Where(pl => pl.Quantidade > 0);
+            query = query.Where(pl => pl.Disponivel);
 
         var itens = await query
             .OrderBy(pl => pl.Produto!.Nome)
@@ -81,7 +82,8 @@ public class EstoqueService
                 pl.Produto.Codigo,
                 pl.LojaId,
                 pl.Loja!.Nome,
-                pl.Quantidade
+                pl.Disponivel,
+                pl.Produto!.Preco
             ))
             .ToListAsync(ct);
 

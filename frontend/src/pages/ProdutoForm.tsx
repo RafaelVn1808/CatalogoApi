@@ -1,62 +1,78 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { produtosApi } from '@/api/produtos'
 import { categoriasApi } from '@/api/categorias'
-import { lojasApi } from '@/api/lojas'
+import { uploadApi } from '@/api/upload'
 import type { ProdutoCreateDto, ProdutoUpdateDto, EstoqueLojaDto } from '@/types/api'
 import type { CategoriaDto } from '@/types/api'
-import type { LojaDto } from '@/types/api'
 
 export default function ProdutoForm() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const isEdit = Boolean(id)
   const [categorias, setCategorias] = useState<CategoriaDto[]>([])
-  const [lojas, setLojas] = useState<LojaDto[]>([])
   const [nome, setNome] = useState('')
   const [descricao, setDescricao] = useState('')
   const [preco, setPreco] = useState('')
   const [codigo, setCodigo] = useState('')
   const [imagemUrl, setImagemUrl] = useState('')
+  const [selectedImageFile, setSelectedImageFile] = useState<File | null>(null)
+  const [uploadingImage, setUploadingImage] = useState(false)
   const [ativo, setAtivo] = useState(true)
   const [categoriaId, setCategoriaId] = useState<number | ''>('')
-  const [estoques, setEstoques] = useState<EstoqueLojaDto[]>([])
+  const [disponivelGeral, setDisponivelGeral] = useState(true)
   const [loading, setLoading] = useState(isEdit)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
+  const previewImageUrl = useMemo(
+    () => (selectedImageFile ? URL.createObjectURL(selectedImageFile) : imagemUrl),
+    [selectedImageFile, imagemUrl]
+  )
+
+  useEffect(() => {
+    return () => {
+      if (previewImageUrl && selectedImageFile) URL.revokeObjectURL(previewImageUrl)
+    }
+  }, [previewImageUrl, selectedImageFile])
 
   useEffect(() => {
     categoriasApi.listar().then((r) => setCategorias(r.data)).catch(() => {})
-    lojasApi.listar().then((r) => setLojas(r.data)).catch(() => {})
   }, [])
 
   useEffect(() => {
     if (!id) return
     produtosApi
       .obter(Number(id))
-      .then((r) => {
-        const p = r.data
+      .then((prodRes) => {
+        const p = prodRes.data
         setNome(p.nome)
         setDescricao(p.descricao ?? '')
         setPreco(String(p.preco))
         setCodigo(p.codigo ?? '')
         setImagemUrl(p.imagemUrl ?? '')
         setCategoriaId(p.categoria.id)
-        setEstoques(p.lojasDisponiveis.map((l) => ({ lojaId: l.lojaId, quantidade: l.quantidade })))
+        setDisponivelGeral(p.lojasDisponiveis.length > 0)
       })
       .catch(() => setError('Produto não encontrado.'))
       .finally(() => setLoading(false))
   }, [id])
 
-  function getQtd(lojaId: number): number {
-    return estoques.find((e) => e.lojaId === lojaId)?.quantidade ?? 0
-  }
-  function setQtd(lojaId: number, quantidade: number) {
-    setEstoques((prev) => {
-      const rest = prev.filter((e) => e.lojaId !== lojaId)
-      if (quantidade > 0) return [...rest, { lojaId, quantidade }]
-      return rest
-    })
+  async function uploadImagemSelecionada(): Promise<string | null> {
+    if (!selectedImageFile) return imagemUrl || null
+    setUploadingImage(true)
+    try {
+      const { data } = await uploadApi.uploadImagemProduto(selectedImageFile)
+      setImagemUrl(data.url)
+      return data.url
+    } catch (err: unknown) {
+      const msg =
+        (err as { response?: { data?: { message?: string } } })?.response?.data?.message ??
+        'Erro ao enviar imagem.'
+      setError(msg)
+      return null
+    } finally {
+      setUploadingImage(false)
+    }
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -71,19 +87,31 @@ export default function ProdutoForm() {
       categoriaId: categoriaId as number,
     }
     try {
+      const imagemFinal = await uploadImagemSelecionada()
+      if (selectedImageFile && !imagemFinal) return
+
       if (isEdit) {
         const body: ProdutoUpdateDto = {
           ...payload,
-          imagemUrl: imagemUrl || undefined,
+          imagemUrl: imagemFinal || undefined,
           ativo,
         }
         await produtosApi.atualizar(Number(id), body)
-        await produtosApi.atualizarEstoque(Number(id), estoques)
+        const estoqueGlobal: EstoqueLojaDto[] = [{ lojaId: 1, disponivel: disponivelGeral }]
+        await produtosApi.atualizarEstoque(Number(id), estoqueGlobal)
       } else {
-        await produtosApi.criar({
+        const { data: criado } = await produtosApi.criar({
           ...payload,
-          estoques: estoques.length > 0 ? estoques : undefined,
-        })
+          estoques: [{ lojaId: 1, disponivel: disponivelGeral }],
+        } as ProdutoCreateDto)
+
+        if (imagemFinal) {
+          await produtosApi.atualizar(criado.id, {
+            ...payload,
+            imagemUrl: imagemFinal,
+            ativo: true,
+          })
+        }
       }
       navigate('/produtos', { replace: true })
     } catch (err: unknown) {
@@ -129,38 +157,69 @@ export default function ProdutoForm() {
               ))}
             </select>
           </div>
+          <div className="form-group">
+            <label>Imagem do produto</label>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={(e) => setSelectedImageFile(e.target.files?.[0] ?? null)}
+            />
+            <p style={{ marginTop: '0.35rem', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
+              Selecione uma imagem para enviar. O upload acontece ao salvar.
+            </p>
+            {previewImageUrl && (
+              <div style={{ marginTop: '0.75rem' }}>
+                <img
+                  src={previewImageUrl}
+                  alt="Pré-visualização"
+                  style={{ width: '100%', maxWidth: '260px', borderRadius: '8px', border: '1px solid var(--border)' }}
+                />
+              </div>
+            )}
+          </div>
+          <div className="form-group">
+            <label>Disponibilidade do produto</label>
+            <p style={{ marginTop: '0.25rem', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
+              Como o estoque e unificado, este status vale para todas as lojas.
+            </p>
+            <label
+              htmlFor="disp-global"
+              style={{
+                marginTop: '0.5rem',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '0.75rem 0.9rem',
+                border: '1px solid var(--border)',
+                borderRadius: '10px',
+                cursor: 'pointer',
+                background: 'var(--card)',
+              }}
+            >
+              <div>
+                <strong style={{ display: 'block', fontSize: '0.95rem' }}>Disponivel no catalogo</strong>
+                <span style={{ color: 'var(--text-muted)', fontSize: '0.82rem' }}>
+                  {disponivelGeral ? 'Produto aparece como disponivel para compra.' : 'Produto aparece como esgotado.'}
+                </span>
+              </div>
+              <input
+                id="disp-global"
+                type="checkbox"
+                checked={disponivelGeral}
+                onChange={(e) => setDisponivelGeral(e.target.checked)}
+                style={{ width: '18px', height: '18px', accentColor: 'var(--primary)' }}
+              />
+            </label>
+          </div>
           {isEdit && (
-            <>
-              <div className="form-group">
-                <label>URL da imagem</label>
-                <input value={imagemUrl} onChange={(e) => setImagemUrl(e.target.value)} maxLength={500} />
-              </div>
-              <div className="form-group" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <input type="checkbox" id="ativo" checked={ativo} onChange={(e) => setAtivo(e.target.checked)} />
-                <label htmlFor="ativo" style={{ marginBottom: 0 }}>Ativo</label>
-              </div>
-              {lojas.length > 0 && (
-                <div className="form-group">
-                  <label>Estoque por loja</label>
-                  {lojas.map((l) => (
-                    <div key={l.id} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.25rem' }}>
-                      <span style={{ minWidth: '120px' }}>{l.nome}</span>
-                      <input
-                        type="number"
-                        min="0"
-                        value={getQtd(l.id)}
-                        onChange={(e) => setQtd(l.id, Math.max(0, parseInt(e.target.value, 10) || 0))}
-                        style={{ width: '80px' }}
-                      />
-                    </div>
-                  ))}
-                </div>
-              )}
-            </>
+            <div className="form-group" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <input type="checkbox" id="ativo" checked={ativo} onChange={(e) => setAtivo(e.target.checked)} />
+              <label htmlFor="ativo" style={{ marginBottom: 0 }}>Ativo</label>
+            </div>
           )}
           {error && <p className="error-msg">{error}</p>}
-          <button type="submit" className="btn btn-primary" disabled={submitting}>
-            {submitting ? 'Salvando...' : 'Salvar'}
+          <button type="submit" className="btn btn-primary" disabled={submitting || uploadingImage}>
+            {submitting || uploadingImage ? 'Salvando...' : 'Salvar'}
           </button>
         </form>
       </div>

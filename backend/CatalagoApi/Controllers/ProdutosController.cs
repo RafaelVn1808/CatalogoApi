@@ -15,15 +15,25 @@ public class ProdutosController : ControllerBase
 
     [HttpGet]
     [AllowAnonymous]
-    [ProducesResponseType(typeof(PaginacaoResponse<ProdutoListDto>), StatusCodes.Status200OK)]
-    public async Task<ActionResult<PaginacaoResponse<ProdutoListDto>>> Listar(
+    [ProducesResponseType(typeof(ProdutoListarResponse), StatusCodes.Status200OK)]
+    public async Task<ActionResult<ProdutoListarResponse>> Listar(
         [FromQuery] string? busca,
         [FromQuery] int? categoriaId,
+        [FromQuery] decimal? precoMin,
+        [FromQuery] decimal? precoMax,
+        [FromQuery] bool? ativo,
+        [FromQuery] bool? disponivel,
+        [FromQuery] bool incluirInativos = false,
         [FromQuery] int pagina = 1,
         [FromQuery] int tamanho = 20,
+        [FromQuery] string? ordenarPor = null,
+        [FromQuery] string? ordenarDirecao = null,
         CancellationToken ct = default)
     {
-        var result = await _produtoService.ListarAsync(busca, categoriaId, pagina, tamanho, ct);
+        pagina = Math.Max(1, pagina);
+        tamanho = Math.Clamp(tamanho, 1, 100);
+        var incluirInativosEfetivo = incluirInativos && User?.Identity?.IsAuthenticated == true;
+        var result = await _produtoService.ListarAsync(busca, categoriaId, precoMin, precoMax, ativo, disponivel, incluirInativosEfetivo, ordenarPor, ordenarDirecao, pagina, tamanho, ct);
         return Ok(result);
     }
 
@@ -40,7 +50,7 @@ public class ProdutosController : ControllerBase
     }
 
     [HttpPost]
-    [Authorize]
+    [Authorize(Roles = "Admin")]
     [ProducesResponseType(typeof(ProdutoDetalheDto), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<ProdutoDetalheDto>> Criar([FromBody] ProdutoCreateDto dto, CancellationToken ct)
@@ -54,7 +64,7 @@ public class ProdutosController : ControllerBase
     }
 
     [HttpPut("{id:int}")]
-    [Authorize]
+    [Authorize(Roles = "Admin")]
     [ProducesResponseType(typeof(ProdutoDetalheDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ProdutoDetalheDto>> Atualizar(int id, [FromBody] ProdutoUpdateDto dto, CancellationToken ct)
@@ -71,8 +81,20 @@ public class ProdutosController : ControllerBase
         return Ok(dtoAtualizado);
     }
 
+    [HttpPut("{id:int}/ativo")]
+    [Authorize(Roles = "Admin")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> AtualizarAtivo(int id, [FromBody] ProdutoAtivoDto dto, CancellationToken ct)
+    {
+        var atualizado = await _produtoService.AtualizarAtivoAsync(id, dto.Ativo, ct);
+        if (!atualizado)
+            return NotFound();
+        return Ok();
+    }
+
     [HttpPut("{id:int}/estoque")]
-    [Authorize]
+    [Authorize(Roles = "Admin")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> AtualizarEstoque(int id, [FromBody] IEnumerable<EstoqueLojaDto> estoques, CancellationToken ct)
@@ -86,7 +108,7 @@ public class ProdutosController : ControllerBase
     }
 
     [HttpDelete("{id:int}")]
-    [Authorize]
+    [Authorize(Roles = "Admin")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Excluir(int id, CancellationToken ct)
