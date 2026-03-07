@@ -290,6 +290,28 @@ export default function Produtos() {
               )}
             </div>
 
+            {/* Faixa horizontal de categorias (modelo 2ª imagem) */}
+            <div className="produtos-categorias-strip">
+              <h2 className="produtos-categorias-strip-titulo">Categorias</h2>
+              <div className="produtos-categorias-strip-inner">
+                <Link
+                  to="/produtos"
+                  className={`produtos-categoria-chip ${categoriaId === '' ? 'ativo' : ''}`}
+                >
+                  Todos
+                </Link>
+                {categorias.map((c) => (
+                  <Link
+                    key={c.id}
+                    to={`/produtos?categoriaId=${c.id}`}
+                    className={`produtos-categoria-chip ${categoriaId === c.id ? 'ativo' : ''}`}
+                  >
+                    {c.nome}
+                  </Link>
+                ))}
+              </div>
+            </div>
+
             {error && <p className="error-msg">{error}</p>}
             {loading && <div className="loading">Carregando produtos...</div>}
 
@@ -427,6 +449,47 @@ export default function Produtos() {
           margin-bottom: 16px;
         }
         .btn-sm-mobile { font-size: 0.8rem; padding: 8px 12px; }
+
+        /* ===== Faixa horizontal de categorias (modelo 2ª imagem) ===== */
+        .produtos-categorias-strip {
+          margin-bottom: 20px;
+        }
+        .produtos-categorias-strip-titulo {
+          font-size: 0.95rem; font-weight: 700; color: var(--text);
+          margin: 0 0 10px 0;
+        }
+        .produtos-categorias-strip-inner {
+          display: flex; align-items: center; gap: 8px;
+          overflow-x: auto; padding-bottom: 6px;
+          scrollbar-width: thin;
+          -webkit-overflow-scrolling: touch;
+        }
+        .produtos-categorias-strip-inner::-webkit-scrollbar { height: 6px; }
+        .produtos-categorias-strip-inner::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+        .produtos-categoria-chip {
+          flex-shrink: 0;
+          padding: 8px 14px;
+          border-radius: 9999px;
+          font-size: 0.85rem; font-weight: 500;
+          text-decoration: none;
+          background: var(--surface);
+          color: var(--text);
+          border: 1px solid var(--border);
+          transition: background 0.15s, color 0.15s, border-color 0.15s;
+        }
+        .produtos-categoria-chip:hover {
+          background: var(--border-light);
+          color: var(--text);
+        }
+        .produtos-categoria-chip.ativo {
+          background: var(--primary);
+          color: white;
+          border-color: var(--primary);
+        }
+        .produtos-categoria-chip.ativo:hover {
+          background: var(--primary-hover);
+          color: white;
+        }
 
         /* ===== Mobile: linha do botão Filtros ===== */
         .mobile-filtro-row {

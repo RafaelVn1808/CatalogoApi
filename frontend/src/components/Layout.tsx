@@ -12,8 +12,6 @@ import {
   Search,
 } from 'lucide-react'
 
-const MAX_CATEGORIAS_NAV = 10
-
 export default function Layout() {
   const { user, logout } = useAuth()
   const [menuAberto, setMenuAberto] = useState(false)
@@ -51,10 +49,13 @@ export default function Layout() {
   }
 
   const isProdutosActive = pathname === '/produtos' && !categoriaIdFromUrl
-  const categoriasNav = categorias.slice(0, MAX_CATEGORIAS_NAV)
 
   const navLinks = (
     <>
+      <span className="layout-nav-categorias-label" aria-hidden>
+        <Menu size={16} style={{ flexShrink: 0 }} />
+        Categorias
+      </span>
       <Link
         to="/produtos"
         className={`layout-nav-link ${isProdutosActive ? 'active' : ''}`}
@@ -65,7 +66,7 @@ export default function Layout() {
       <NavLink to="/nossa-loja" className={({ isActive }) => `layout-nav-link ${isActive ? 'active' : ''}`} onClick={fecharMenu}>
         Nossa loja
       </NavLink>
-      {categoriasNav.map((c) => (
+      {categorias.map((c) => (
         <Link
           key={c.id}
           to={`/produtos?categoriaId=${c.id}`}
@@ -277,18 +278,32 @@ export default function Layout() {
         }
         .layout-nav-link.active { color: var(--primary); font-weight: 600; }
 
-        /* Barra de categorias (cinza escuro, desktop) */
+        /* Barra de categorias (cinza escuro, estilo Kalunga: label + scroll horizontal) */
         .layout-nav-bar {
           display: none;
           background: var(--nav-bar-bg);
         }
         .layout-nav-bar-inner {
           max-width: 1280px; margin: 0 auto; padding: 0 12px;
-          display: flex; align-items: center; flex-wrap: wrap; gap: 4px;
+          display: flex; align-items: center; flex-wrap: nowrap; gap: 0;
           min-height: 44px;
+          overflow-x: auto;
+          scrollbar-width: thin;
+          -webkit-overflow-scrolling: touch;
+        }
+        .layout-nav-bar-inner::-webkit-scrollbar { height: 6px; }
+        .layout-nav-bar-inner::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 3px; }
+        .layout-nav-categorias-label {
+          display: inline-flex; align-items: center; gap: 8px;
+          color: #e5e7eb; font-size: 0.875rem; font-weight: 600;
+          padding: 10px 14px 10px 0; margin-right: 4px;
+          flex-shrink: 0;
+          border-right: 1px solid rgba(255,255,255,0.2);
+          padding-right: 14px; margin-right: 8px;
         }
         .layout-nav-bar .layout-nav-link {
           color: #e5e7eb; padding: 10px 14px;
+          flex-shrink: 0;
         }
         .layout-nav-bar .layout-nav-link:hover { color: white; background: rgba(255,255,255,0.08); }
         .layout-nav-bar .layout-nav-link.active { color: var(--nav-link-active); font-weight: 600; }
