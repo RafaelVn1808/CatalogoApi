@@ -199,3 +199,12 @@ input, select, textarea {
   opacity: 0.4;
   cursor: not-allowed;
 }
+
+/* Mobile-first adjustments */
+@media (max-width: 767px) {
+  .container { padding: 0 12px; }
+  .card { padding: 1rem; border-radius: 10px; }
+  h1 { font-size: 1.15rem; }
+  h2 { font-size: 1rem; }
+  .btn { padding: 0.5rem 0.85rem; font-size: 0.85rem; border-radius: 8px; }
+}
