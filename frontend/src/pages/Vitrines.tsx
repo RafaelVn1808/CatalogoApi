@@ -265,7 +265,7 @@ export default function Vitrines() {
                     <div key={item.id} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.5rem 0.75rem', border: '1px solid var(--border)', borderRadius: 10, background: item.ativo ? 'var(--surface)' : 'var(--bg)' }}>
                       <img src={item.imagemUrl} alt={item.titulo ?? ''} style={{ width: 72, height: 48, objectFit: 'cover', borderRadius: 6, flexShrink: 0 }} />
                       <div style={{ flex: 1, minWidth: 0 }}>
-                        <p style={{ margin: 0, fontWeight: 600, fontSize: '0.875rem', truncate: true }}>{item.titulo || <span style={{ color: 'var(--text-muted)' }}>Sem título</span>}</p>
+                        <p style={{ margin: 0, fontWeight: 600, fontSize: '0.875rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.titulo || <span style={{ color: 'var(--text-muted)' }}>Sem título</span>}</p>
                         {item.produtoNome && <p style={{ margin: 0, fontSize: '0.78rem', color: 'var(--text-muted)' }}>Produto: {item.produtoNome}</p>}
                         {item.linkUrl && <p style={{ margin: 0, fontSize: '0.78rem', color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.linkUrl}</p>}
                       </div>
