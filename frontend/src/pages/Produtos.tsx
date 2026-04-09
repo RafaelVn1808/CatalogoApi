@@ -9,13 +9,14 @@ import {
 } from 'lucide-react'
 import { produtosApi } from '@/api/produtos'
 import { categoriasApi } from '@/api/categorias'
+import { vitrinessApi } from '@/api/vitrines'
 import { useAuth } from '@/contexts/AuthContext'
-import type { ProdutoListDto } from '@/types/api'
-import type { CategoriaDto } from '@/types/api'
+import CarrosselVitrine from '@/components/CarrosselVitrine'
+import type { ProdutoListDto, CategoriaDto, VitrineDto } from '@/types/api'
 
 const TAMANHO_PAGINA = 12
 
-type OrdenarOpcao = 'preco-asc' | 'preco-desc' | 'nome-asc' | 'nome-desc'
+type OrdenarOpcao = 'relevancia' | 'preco-asc' | 'preco-desc' | 'nome-asc' | 'nome-desc'
 
 export default function Produtos() {
   const { user } = useAuth()
@@ -26,7 +27,7 @@ export default function Produtos() {
   const categoriaId = searchParams.get('categoriaId') ? Number(searchParams.get('categoriaId')) : ('' as number | '')
   const precoMin = searchParams.get('precoMin') ?? ''
   const precoMax = searchParams.get('precoMax') ?? ''
-  const ordenar = (searchParams.get('ordenar') ?? 'nome-asc') as OrdenarOpcao
+  const ordenar = (searchParams.get('ordenar') ?? 'relevancia') as OrdenarOpcao
   const pagina = Number(searchParams.get('pagina') ?? '1') || 1
 
   const filtrosAtivos = [
@@ -62,6 +63,7 @@ export default function Produtos() {
   const [totalPaginas, setTotalPaginas] = useState(0)
   const [precoMedio, setPrecoMedio] = useState<number | null>(null)
   const [categorias, setCategorias] = useState<CategoriaDto[]>([])
+  const [vitrine, setVitrine] = useState<VitrineDto | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
@@ -76,6 +78,13 @@ export default function Produtos() {
   }, [])
 
   useEffect(() => {
+    vitrinessApi
+      .obterAtiva()
+      .then((r) => setVitrine(r.data))
+      .catch(() => setVitrine(null))
+  }, [])
+
+  useEffect(() => {
     setLoading(true)
     setError('')
     const parsePreco = (s: string): number | undefined => {
@@ -86,13 +95,15 @@ export default function Produtos() {
     const precoMinNum = parsePreco(precoMin)
     const precoMaxNum = parsePreco(precoMax)
     const [ordenarPor, ordenarDirecao] =
-      ordenar === 'preco-asc'
-        ? ['Preco', 'asc']
-        : ordenar === 'preco-desc'
-          ? ['Preco', 'desc']
-          : ordenar === 'nome-desc'
-            ? ['Nome', 'desc']
-            : ['Nome', 'asc']
+      ordenar === 'relevancia'
+        ? ['Relevancia', 'desc']
+        : ordenar === 'preco-asc'
+          ? ['Preco', 'asc']
+          : ordenar === 'preco-desc'
+            ? ['Preco', 'desc']
+            : ordenar === 'nome-desc'
+              ? ['Nome', 'desc']
+              : ['Nome', 'asc']
 
     produtosApi
       .listar({
@@ -249,6 +260,7 @@ export default function Produtos() {
           onChange={(e) => setFilter('ordenar', e.target.value)}
           className="filtro-select"
         >
+          <option value="relevancia">Mais relevantes</option>
           <option value="preco-asc">Menor preço</option>
           <option value="preco-desc">Maior preço</option>
           <option value="nome-asc">Nome (A–Z)</option>
@@ -261,6 +273,9 @@ export default function Produtos() {
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg)', color: 'var(--text)' }}>
+      {vitrine && vitrine.itens.some((i) => i.ativo) && (
+        <CarrosselVitrine vitrine={vitrine} />
+      )}
       <main className="produtos-page">
         <div className="produtos-layout">
           {/* Desktop sidebar */}

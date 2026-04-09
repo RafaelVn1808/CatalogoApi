@@ -53,6 +53,7 @@ builder.Services.AddScoped<LojaService>();
 builder.Services.AddScoped<EstoqueService>();
 builder.Services.AddScoped<ImportacaoCsvService>();
 builder.Services.AddScoped<UploadService>();
+builder.Services.AddScoped<VitrineService>();
 builder.Services.AddHttpClient<SupabaseStorageService>();
 
 // CORS: em Development usa localhost; em Production exige configuração explícita (Cors:AllowedOrigins)

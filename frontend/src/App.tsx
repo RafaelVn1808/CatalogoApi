@@ -11,6 +11,7 @@ const ProdutoForm = lazy(() => import('@/pages/ProdutoForm'))
 const Categorias = lazy(() => import('@/pages/Categorias'))
 const Lojas = lazy(() => import('@/pages/Lojas'))
 const Estoque = lazy(() => import('@/pages/Estoque'))
+const Vitrines = lazy(() => import('@/pages/Vitrines'))
 const AlterarSenhaObrigatoria = lazy(() => import('@/pages/AlterarSenhaObrigatoria'))
 
 function ProtectedRoute() {
@@ -43,6 +44,7 @@ export default function App() {
             <Route path="categorias" element={<Categorias />} />
             <Route path="lojas" element={<Lojas />} />
             <Route path="estoque" element={<Estoque />} />
+            <Route path="vitrines" element={<Vitrines />} />
           </Route>
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />

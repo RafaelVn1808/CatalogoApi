@@ -96,6 +96,7 @@ export default function Layout() {
                 <NavLink to="/categorias" className={({ isActive }) => `layout-utility-link ${isActive ? 'active' : ''}`}>Categorias</NavLink>
                 <NavLink to="/lojas" className={({ isActive }) => `layout-utility-link ${isActive ? 'active' : ''}`}>Lojas</NavLink>
                 <NavLink to="/estoque" className={({ isActive }) => `layout-utility-link ${isActive ? 'active' : ''}`}>Estoque</NavLink>
+                <NavLink to="/vitrines" className={({ isActive }) => `layout-utility-link ${isActive ? 'active' : ''}`}>Vitrines</NavLink>
                 <span className="layout-utility-sep">|</span>
                 <span className="layout-utility-user">{user.nome}</span>
                 <button type="button" className="layout-utility-btn" onClick={logout}>Sair</button>

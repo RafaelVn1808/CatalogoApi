@@ -3,6 +3,7 @@ using System;
 using CatalagoApi.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace CatalagoApi.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260401192003_CategoriaOrdemExibicao")]
+    partial class CategoriaOrdemExibicao
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -213,79 +216,6 @@ namespace CatalagoApi.Migrations
                     b.ToTable("Usuarios");
                 });
 
-            modelBuilder.Entity("CatalagoApi.Models.VitrinePromocional", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<bool>("Ativa")
-                        .HasColumnType("boolean");
-
-                    b.Property<int>("AutoPlayMs")
-                        .HasColumnType("integer");
-
-                    b.Property<DateTime?>("DataFim")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTime?>("DataInicio")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("Nome")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("Ativa");
-
-                    b.ToTable("Vitrines");
-                });
-
-            modelBuilder.Entity("CatalagoApi.Models.VitrinePromocionalItem", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<bool>("Ativo")
-                        .HasColumnType("boolean");
-
-                    b.Property<string>("ImagemUrl")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("LinkUrl")
-                        .HasColumnType("text");
-
-                    b.Property<int>("Ordem")
-                        .HasColumnType("integer");
-
-                    b.Property<int?>("ProdutoId")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("Subtitulo")
-                        .HasColumnType("text");
-
-                    b.Property<string>("Titulo")
-                        .HasColumnType("text");
-
-                    b.Property<int>("VitrineId")
-                        .HasColumnType("integer");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ProdutoId");
-
-                    b.HasIndex("VitrineId", "Ordem");
-
-                    b.ToTable("VitrineItens");
-                });
-
             modelBuilder.Entity("CatalagoApi.Models.Produto", b =>
                 {
                     b.HasOne("CatalagoApi.Models.Categoria", "Categoria")
@@ -336,24 +266,6 @@ namespace CatalagoApi.Migrations
                     b.Navigation("Loja");
                 });
 
-            modelBuilder.Entity("CatalagoApi.Models.VitrinePromocionalItem", b =>
-                {
-                    b.HasOne("CatalagoApi.Models.Produto", "Produto")
-                        .WithMany()
-                        .HasForeignKey("ProdutoId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.HasOne("CatalagoApi.Models.VitrinePromocional", "Vitrine")
-                        .WithMany("Itens")
-                        .HasForeignKey("VitrineId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Produto");
-
-                    b.Navigation("Vitrine");
-                });
-
             modelBuilder.Entity("CatalagoApi.Models.Categoria", b =>
                 {
                     b.Navigation("Produtos");
@@ -374,11 +286,6 @@ namespace CatalagoApi.Migrations
             modelBuilder.Entity("CatalagoApi.Models.Usuario", b =>
                 {
                     b.Navigation("RefreshTokens");
-                });
-
-            modelBuilder.Entity("CatalagoApi.Models.VitrinePromocional", b =>
-                {
-                    b.Navigation("Itens");
                 });
 #pragma warning restore 612, 618
         }

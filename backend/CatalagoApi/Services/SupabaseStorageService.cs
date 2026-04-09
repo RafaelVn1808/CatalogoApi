@@ -46,6 +46,46 @@ public class SupabaseStorageService
         var publicUrl = $"{_settings.Url.TrimEnd('/')}/storage/v1/object/public/{bucket}/{path}";
         return (publicUrl, null);
     }
+
+    /// <summary>
+    /// Remove um arquivo do Supabase Storage a partir da URL pública. Melhor esforço: loga warning em caso de falha.
+    /// </summary>
+    public async Task<bool> DeleteAsync(string publicUrl, CancellationToken ct = default)
+    {
+        try
+        {
+            var bucket = _settings.Bucket;
+            var marker = $"/object/public/{bucket}/";
+            var idx = publicUrl.IndexOf(marker, StringComparison.OrdinalIgnoreCase);
+            if (idx < 0)
+            {
+                _logger.LogWarning("Supabase Storage delete: não foi possível extrair path de '{Url}'", publicUrl);
+                return false;
+            }
+
+            var storagePath = publicUrl.Substring(idx + marker.Length);
+            var deleteUrl = $"{_settings.Url.TrimEnd('/')}/storage/v1/object/{bucket}/{storagePath}";
+
+            using var request = new HttpRequestMessage(HttpMethod.Delete, deleteUrl);
+            request.Headers.Add("Authorization", $"Bearer {_settings.ServiceKey}");
+            request.Headers.Add("apikey", _settings.ServiceKey);
+
+            var response = await _http.SendAsync(request, ct);
+            if (!response.IsSuccessStatusCode)
+            {
+                var errorBody = await response.Content.ReadAsStringAsync(ct);
+                _logger.LogWarning("Supabase Storage delete failed. Status: {Status}, Response: {Response}, Path: {Path}", response.StatusCode, errorBody, storagePath);
+                return false;
+            }
+
+            return true;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Supabase Storage delete exception para '{Url}'", publicUrl);
+            return false;
+        }
+    }
 }
 
 public class SupabaseSettings

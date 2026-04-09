@@ -15,7 +15,7 @@ public class CategoriaService
     {
         return await _db.Categorias
             .OrderBy(c => c.Nome)
-            .Select(c => new CategoriaDto(c.Id, c.Nome, c.Descricao))
+            .Select(c => new CategoriaDto(c.Id, c.Nome, c.Descricao, c.Prioridade))
             .ToListAsync(ct);
     }
 
@@ -24,15 +24,15 @@ public class CategoriaService
         var categoria = await _db.Categorias.FindAsync([id], ct);
         if (categoria == null)
             return null;
-        return new CategoriaDto(categoria.Id, categoria.Nome, categoria.Descricao);
+        return new CategoriaDto(categoria.Id, categoria.Nome, categoria.Descricao, categoria.Prioridade);
     }
 
     public async Task<CategoriaDto> CriarAsync(CategoriaCreateDto dto, CancellationToken ct = default)
     {
-        var categoria = new Categoria { Nome = dto.Nome, Descricao = dto.Descricao };
+        var categoria = new Categoria { Nome = dto.Nome, Descricao = dto.Descricao, Prioridade = dto.Prioridade };
         _db.Categorias.Add(categoria);
         await _db.SaveChangesAsync(ct);
-        return new CategoriaDto(categoria.Id, categoria.Nome, categoria.Descricao);
+        return new CategoriaDto(categoria.Id, categoria.Nome, categoria.Descricao, categoria.Prioridade);
     }
 
     public async Task<CategoriaDto?> AtualizarAsync(int id, CategoriaUpdateDto dto, CancellationToken ct = default)
@@ -43,8 +43,9 @@ public class CategoriaService
 
         categoria.Nome = dto.Nome;
         categoria.Descricao = dto.Descricao;
+        categoria.Prioridade = dto.Prioridade;
         await _db.SaveChangesAsync(ct);
-        return new CategoriaDto(categoria.Id, categoria.Nome, categoria.Descricao);
+        return new CategoriaDto(categoria.Id, categoria.Nome, categoria.Descricao, categoria.Prioridade);
     }
 
     /// <summary>

@@ -14,6 +14,8 @@ public class AppDbContext : DbContext
     public DbSet<ProdutoLoja> ProdutosLoja => Set<ProdutoLoja>();
     public DbSet<Usuario> Usuarios => Set<Usuario>();
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
+    public DbSet<VitrinePromocional> Vitrines => Set<VitrinePromocional>();
+    public DbSet<VitrinePromocionalItem> VitrineItens => Set<VitrinePromocionalItem>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -55,5 +57,24 @@ public class AppDbContext : DbContext
             .HasIndex(rt => rt.Token);
         modelBuilder.Entity<RefreshToken>()
             .HasIndex(rt => rt.ExpiresAt);
+
+        // VitrinePromocionalItem
+        modelBuilder.Entity<VitrinePromocionalItem>()
+            .HasOne(i => i.Vitrine)
+            .WithMany(v => v.Itens)
+            .HasForeignKey(i => i.VitrineId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<VitrinePromocionalItem>()
+            .HasOne(i => i.Produto)
+            .WithMany()
+            .HasForeignKey(i => i.ProdutoId)
+            .OnDelete(DeleteBehavior.SetNull)
+            .IsRequired(false);
+
+        modelBuilder.Entity<VitrinePromocional>()
+            .HasIndex(v => v.Ativa);
+        modelBuilder.Entity<VitrinePromocionalItem>()
+            .HasIndex(i => new { i.VitrineId, i.Ordem });
     }
 }

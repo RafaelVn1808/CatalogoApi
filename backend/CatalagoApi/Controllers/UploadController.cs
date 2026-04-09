@@ -28,4 +28,20 @@ public class UploadController : ControllerBase
 
         return Ok(new { url });
     }
+
+    [HttpPost("promo")]
+    [RequestSizeLimit(5_242_880)] // 5 MB
+    [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> UploadPromo(IFormFile file, CancellationToken ct)
+    {
+        await using var stream = file.OpenReadStream();
+        var (url, erro) = await _uploadService.UploadImagemProdutoAsync(
+            stream, file.Length, file.FileName, file.ContentType, ct);
+
+        if (url == null)
+            return BadRequest(new { message = erro });
+
+        return Ok(new { url });
+    }
 }

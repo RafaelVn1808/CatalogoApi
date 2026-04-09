@@ -44,16 +44,19 @@ export interface CategoriaDto {
   id: number
   nome: string
   descricao: string | null
+  prioridade: number
 }
 
 export interface CategoriaCreateDto {
   nome: string
   descricao?: string | null
+  prioridade?: number
 }
 
 export interface CategoriaUpdateDto {
   nome: string
   descricao?: string | null
+  prioridade?: number
 }
 
 // ---- Loja ----
@@ -153,6 +156,66 @@ export interface ProdutoListarResponse {
   tamanho: number
   totalPaginas: number
   precoMedio: number | null
+}
+
+// ---- Vitrine Promocional ----
+export interface VitrineItemDto {
+  id: number
+  vitrineId: number
+  produtoId: number | null
+  produtoNome: string | null
+  imagemUrl: string
+  titulo: string | null
+  subtitulo: string | null
+  linkUrl: string | null
+  ordem: number
+  ativo: boolean
+}
+
+export interface VitrineDto {
+  id: number
+  nome: string
+  ativa: boolean
+  dataInicio: string | null
+  dataFim: string | null
+  autoPlayMs: number
+  itens: VitrineItemDto[]
+}
+
+export interface VitrineCreateDto {
+  nome: string
+  ativa?: boolean
+  dataInicio?: string | null
+  dataFim?: string | null
+  autoPlayMs?: number
+}
+
+export interface VitrineUpdateDto {
+  nome: string
+  ativa: boolean
+  dataInicio: string | null
+  dataFim: string | null
+  autoPlayMs: number
+}
+
+export interface VitrineItemCreateDto {
+  imagemUrl: string
+  produtoId?: number | null
+  titulo?: string | null
+  subtitulo?: string | null
+  linkUrl?: string | null
+  ordem?: number
+  ativo?: boolean
+}
+
+export interface VitrineItemUpdateDto {
+  imagemUrl: string
+  produtoId: number | null
+  titulo: string | null
+  subtitulo: string | null
+  linkUrl: string | null
+  ordem: number
+  ativo: boolean
 }
 
 // ---- Estoque ----

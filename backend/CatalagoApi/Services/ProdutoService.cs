@@ -8,8 +8,13 @@ namespace CatalagoApi.Services;
 public class ProdutoService
 {
     private readonly AppDbContext _db;
+    private readonly SupabaseStorageService _storage;
 
-    public ProdutoService(AppDbContext db) => _db = db;
+    public ProdutoService(AppDbContext db, SupabaseStorageService storage)
+    {
+        _db = db;
+        _storage = storage;
+    }
 
     public async Task<ProdutoListarResponse> ListarAsync(
         string? busca,
@@ -58,9 +63,11 @@ public class ProdutoService
         var total = await query.CountAsync(ct);
 
         var dirAsc = !string.Equals(ordenarDirecao?.Trim(), "desc", StringComparison.OrdinalIgnoreCase);
-        query = string.Equals(ordenarPor?.Trim(), "Preco", StringComparison.OrdinalIgnoreCase)
-            ? (dirAsc ? query.OrderBy(p => p.Preco) : query.OrderByDescending(p => p.Preco))
-            : (dirAsc ? query.OrderBy(p => p.Nome) : query.OrderByDescending(p => p.Nome));
+        query = string.Equals(ordenarPor?.Trim(), "Relevancia", StringComparison.OrdinalIgnoreCase)
+            ? query.OrderByDescending(p => p.Categoria.Prioridade).ThenBy(p => p.Nome)
+            : string.Equals(ordenarPor?.Trim(), "Preco", StringComparison.OrdinalIgnoreCase)
+                ? (dirAsc ? query.OrderBy(p => p.Preco) : query.OrderByDescending(p => p.Preco))
+                : (dirAsc ? query.OrderBy(p => p.Nome) : query.OrderByDescending(p => p.Nome));
 
         decimal? precoMedio = null;
         if (total > 0)
@@ -108,7 +115,7 @@ public class ProdutoService
             produto.Preco,
             produto.ImagemUrl,
             produto.Codigo,
-            new CategoriaDto(produto.Categoria.Id, produto.Categoria.Nome, produto.Categoria.Descricao),
+            new CategoriaDto(produto.Categoria.Id, produto.Categoria.Nome, produto.Categoria.Descricao, produto.Categoria.Prioridade),
             produto.ProdutosLoja
                 .Where(pl => pl.Disponivel)
                 .Select(pl => new DisponibilidadeLojaDto(pl.LojaId, pl.Loja.Nome, pl.Loja.WhatsApp, pl.Disponivel))
@@ -238,6 +245,9 @@ public class ProdutoService
         var produto = await _db.Produtos.FindAsync([id], ct);
         if (produto == null)
             return false;
+
+        if (!string.IsNullOrEmpty(produto.ImagemUrl))
+            await _storage.DeleteAsync(produto.ImagemUrl, ct);
 
         _db.Produtos.Remove(produto);
         await _db.SaveChangesAsync(ct);

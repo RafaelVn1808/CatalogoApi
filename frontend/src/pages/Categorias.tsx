@@ -17,6 +17,7 @@ export default function Categorias() {
   const [editId, setEditId] = useState<number | null>(null)
   const [nome, setNome] = useState('')
   const [descricao, setDescricao] = useState('')
+  const [prioridade, setPrioridade] = useState(0)
   const [submitting, setSubmitting] = useState(false)
   const [formError, setFormError] = useState('')
   const [limpando, setLimpando] = useState(false)
@@ -53,8 +54,8 @@ export default function Categorias() {
   const todosDaPaginaSelecionados = idsDaPagina.length > 0 && idsDaPagina.every((id) => selecionados.has(id))
   const algunsDaPaginaSelecionados = idsDaPagina.some((id) => selecionados.has(id))
 
-  function openCreate() { setModal('create'); setEditId(null); setNome(''); setDescricao(''); setFormError('') }
-  function openEdit(c: CategoriaDto) { setModal('edit'); setEditId(c.id); setNome(c.nome); setDescricao(c.descricao ?? ''); setFormError('') }
+  function openCreate() { setModal('create'); setEditId(null); setNome(''); setDescricao(''); setPrioridade(0); setFormError('') }
+  function openEdit(c: CategoriaDto) { setModal('edit'); setEditId(c.id); setNome(c.nome); setDescricao(c.descricao ?? ''); setPrioridade(c.prioridade); setFormError('') }
   function closeModal() { setModal(null); setEditId(null) }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -63,9 +64,9 @@ export default function Categorias() {
     setSubmitting(true)
     try {
       if (editId !== null) {
-        await categoriasApi.atualizar(editId, { nome, descricao: descricao || undefined })
+        await categoriasApi.atualizar(editId, { nome, descricao: descricao || undefined, prioridade })
       } else {
-        await categoriasApi.criar({ nome, descricao: descricao || undefined })
+        await categoriasApi.criar({ nome, descricao: descricao || undefined, prioridade })
       }
       closeModal()
       load()
@@ -216,6 +217,7 @@ export default function Categorias() {
                   </th>
                   <th style={{ padding: '0.65rem 0.75rem' }}>Nome</th>
                   <th style={{ padding: '0.65rem 0.75rem' }}>Descrição</th>
+                  <th style={{ padding: '0.65rem 0.75rem', textAlign: 'center' }}>Prioridade</th>
                   <th style={{ padding: '0.65rem 0.75rem', textAlign: 'right' }}>Ações</th>
                 </tr>
               </thead>
@@ -227,6 +229,17 @@ export default function Categorias() {
                     </td>
                     <td style={{ padding: '0.6rem 0.75rem', fontWeight: 500 }}>{c.nome}</td>
                     <td style={{ padding: '0.6rem 0.75rem', color: 'var(--text-muted)' }}>{c.descricao || '—'}</td>
+                    <td style={{ padding: '0.6rem 0.75rem', textAlign: 'center' }}>
+                      {c.prioridade > 0 ? (
+                        <span style={{
+                          display: 'inline-block', padding: '0.15rem 0.5rem',
+                          borderRadius: 999, fontSize: '0.75rem', fontWeight: 700,
+                          background: 'var(--primary)', color: '#fff',
+                        }}>{c.prioridade}</span>
+                      ) : (
+                        <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>—</span>
+                      )}
+                    </td>
                     <td style={{ padding: '0.6rem 0.75rem' }}>
                       <div style={{ display: 'flex', gap: 4, justifyContent: 'flex-end' }}>
                         <button type="button" className="btn-action" title="Editar" onClick={() => openEdit(c)}><Pencil size={15} /></button>
@@ -261,6 +274,16 @@ export default function Categorias() {
               <div className="form-group">
                 <label>Descrição</label>
                 <input value={descricao} onChange={(e) => setDescricao(e.target.value)} maxLength={500} />
+              </div>
+              <div className="form-group">
+                <label>Prioridade <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(0 = normal, maior = mais relevante)</span></label>
+                <input
+                  type="number"
+                  min={0}
+                  max={100}
+                  value={prioridade}
+                  onChange={(e) => setPrioridade(Math.max(0, Math.min(100, Number(e.target.value))))}
+                />
               </div>
               {formError && <p className="error-msg">{formError}</p>}
               <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1rem' }}>
